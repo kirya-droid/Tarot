@@ -2,10 +2,28 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Tarot WebApp</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Tarot Bot</title>
 </head>
 <body>
-    <h2>🔮 Добро пожаловать в Tarot WebApp (локальный сервер)</h2>
-    <p>Скоро здесь появятся твои карты Таро!</p>
+    <h2>🔮 Tarot расклад</h2>
+    <input type="text" id="name" placeholder="Ваше имя"><br>
+    <input type="text" id="birthdate" placeholder="ДД.ММ.ГГГГ"><br>
+    <textarea id="question" placeholder="Ваш вопрос для Таро"></textarea><br>
+    <button onclick="sendData()">Получить расклад</button>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+
+        function sendData() {
+            let name = document.getElementById('name').value;
+            let birthdate = document.getElementById('birthdate').value;
+            let question = document.getElementById('question').value;
+
+            let data = name + "|" + birthdate + "|" + question;
+            tg.sendData(data);
+            tg.close();
+        }
+    </script>
 </body>
 </html>

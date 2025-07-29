@@ -1,52 +1,37 @@
-import random
-from openai import OpenAI
+import logging
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.types import WebAppInfo
+from aiogram.filters import CommandStart
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from dotenv import load_dotenv
+import os
+from tarot import get_tarot_reading
 
-# Базовый список старших арканов Таро
-tarot_cards = [
-    'Шут', 'Маг', 'Жрица', 'Императрица', 'Император', 'Иерофант',
-    'Влюблённые', 'Колесница', 'Сила', 'Отшельник', 'Колесо Фортуны',
-    'Справедливость', 'Повешенный', 'Смерть', 'Умеренность', 'Дьявол',
-    'Башня', 'Звезда', 'Луна', 'Солнце', 'Суд', 'Мир'
-]
+load_dotenv()
 
-# Функция генерации случайных карт
-def generate_random_cards(cards, num=3):
-    return random.sample(cards, num)
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+bot = Bot(TOKEN)
+dp = Dispatcher()
 
-# Сбор информации от пользователя
-user_name = input("Введите ваше имя: ")
-user_birthdate = input("Введите вашу дату рождения (ДД.ММ.ГГГГ): ")
-user_question = input("Опишите вашу ситуацию или задайте вопрос для Таро: ")
+# Приветствие и кнопка WebApp
+@dp.message(CommandStart())
+async def cmd_start(message: types.Message):
+    kb = ReplyKeyboardBuilder()
+    kb.add(types.KeyboardButton(text="🔮 Получить расклад Таро", web_app=WebAppInfo(url="https://kirya-droid.github.io/Tarot/")))
+    await message.answer("👋 Привет! Нажми на кнопку ниже и получи свой расклад Таро!", reply_markup=kb.as_markup(resize_keyboard=True))
 
-# Генерируем 3 случайные карты для прошлого, настоящего, будущего
-past, present, future = generate_random_cards(tarot_cards)
+# Обработка данных из WebApp
+@dp.message(F.web_app_data)
+async def web_app_tarot(message: types.Message):
+    user_data = message.web_app_data.data.split("|")
+    user_name, user_birthdate, user_question = user_data[0], user_data[1], user_data[2]
 
-# Формируем prompt для GPT
-prompt = f"""
-Ты — опытный таролог. Пользователь: {user_name}, дата рождения: {user_birthdate}, вопрос: "{user_question}".
+    await message.answer("🔮✨ Минутку, делаю для тебя расклад...")
 
-Карты, которые выпали в раскладе (прошлое-настоящее-будущее):
-Прошлое: «{past}»  
-Настоящее: «{present}»  
-Будущее: «{future}»
-Тон у тебя дружелюбный, голос радушного советчика
-Опиши подробно каждую карту в контексте заданного вопроса. Затем кратко подытожь общий смысл расклада, дав персонализированный совет или прогноз для {user_name}.
-"""
+    tarot_result = await get_tarot_reading(user_name, user_birthdate, user_question)
 
-# Инициализация OpenAI-клиента с вашим API ключом
-client = OpenAI(api_key=(''))
+    await message.answer(f"✨ Вот твой расклад, {user_name}:\n\n{tarot_result}")
 
-# Запрос к новому API ChatCompletion
-response = client.chat.completions.create(
-    model="gpt-4.1-nano-2025-04-14",  # используйте доступную вам модель, например "gpt-3.5-turbo" или "gpt-4"
-    messages=[
-        {"role": "user", "content": prompt}
-    ]
-)
-
-# Получаем текст ответа
-tarot_reading = response.choices[0].message.content
-
-# Красивый вывод расклада в консоль
-print("\n🔮 Ваш персонализированный расклад Таро:\n")
-print(tarot_reading)
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    dp.run_polling(bot)
