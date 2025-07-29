@@ -17,7 +17,7 @@ dp = Dispatcher()
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
     kb = ReplyKeyboardBuilder()
-    kb.add(types.KeyboardButton(text="🔮 Получить расклад Таро", web_app=WebAppInfo(url="https://kirya-droid.github.io/Tarot/")))
+    kb.add(types.KeyboardButton(text="🔮 Получить расклад Таро", web_app=WebAppInfo(url="https://kirya-droid.github.io/Tarot/tarot_webapp/")))
     await message.answer("👋 Привет! Нажми на кнопку ниже и получи свой расклад Таро!", reply_markup=kb.as_markup(resize_keyboard=True))
 
 # Обработка данных из WebApp
